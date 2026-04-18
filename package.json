@@ -1,0 +1,21 @@
+{
+  "name": "passwordmanager",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "type": "commonjs",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @pm/web",
+    "dev:api": "npm run start:dev -w @pm/api",
+    "dev:mobile": "npm run start -w @pm/mobile",
+    "build:web": "npm run build -w @pm/web",
+    "build:api": "npm run build -w @pm/api"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

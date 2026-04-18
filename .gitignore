@@ -1,0 +1,93 @@
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# Build output
+dist/
+build/
+.cache/
+.tmp/
+temp/
+.sass-cache/
+*.map
+cache*/
+old*/
+backup*/
+full*/
+
+
+# PHP / Composer
+/vendor/
+
+# WordPress (site-level artifacts)
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/cache/
+wp-content/backups/
+wp-content/backup-db/
+wp-content/ai1wm-backups/
+wp-content/wflogs/
+wp-content/woocommerce/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Next.js
+.next/
+out/
+.swc/
+next-env.d.ts
+
+# Testing
+coverage/
+
+# Monorepo caches
+.turbo/
+.vercel/
+.eslintcache
+
+# Prisma
+.prisma/
+prisma/dev.db
+*.db
+
+# Expo / React Native
+.expo/
+.expo-shared/
+expo-env.d.ts
+
+# iOS
+apps/mobile/ios/Pods/
+apps/mobile/ios/build/
+apps/mobile/ios/*.xcworkspace
+apps/mobile/ios/*.xcodeproj/xcuserdata/
+
+# Android
+apps/mobile/android/.gradle/
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+apps/mobile/android/local.properties
+*.keystore
+*.jks
