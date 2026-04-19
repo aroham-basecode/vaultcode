@@ -9,8 +9,10 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm --prefix web run dev",
     "dev:web": "npm --prefix web run dev",
     "dev:mobile": "npm --prefix apps/mobile run start",
+    "build": "npm --prefix web run build",
     "build:web": "npm --prefix web run build"
   },
   "keywords": [],
