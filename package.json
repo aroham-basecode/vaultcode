@@ -9,11 +9,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "npm run dev -w @pm/web",
-    "dev:api": "npm run start:dev -w @pm/api",
-    "dev:mobile": "npm run start -w @pm/mobile",
-    "build:web": "npm run build -w @pm/web",
-    "build:api": "npm run build -w @pm/api"
+    "dev:web": "npm --prefix web run dev",
+    "dev:mobile": "npm --prefix apps/mobile run start",
+    "build:web": "npm --prefix web run build"
   },
   "keywords": [],
   "author": "",

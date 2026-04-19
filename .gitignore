@@ -11,6 +11,9 @@
 *.swp
 *~
 
+# Apps not used
+apps/api/
+
 # Node
 node_modules/
 npm-debug.log*
@@ -53,6 +56,12 @@ wp-content/woocommerce/
 
 # Logs
 *.log
+
+# Archives
+*.zip
+
+# Local docs
+*_HI.md
 
 # Next.js
 .next/
