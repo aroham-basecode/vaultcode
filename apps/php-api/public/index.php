@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/../../config-vault.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: ' . (getenv('CORS_ORIGIN') ?: '*'));
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
@@ -133,6 +135,9 @@ function auth_user(): array {
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = rtrim($path, '/');
+if ($path === '') $path = '/';
+$prefix = '/vault';
+if (str_starts_with($path, $prefix)) $path = substr($path, strlen($prefix));
 if ($path === '') $path = '/';
 
 try {

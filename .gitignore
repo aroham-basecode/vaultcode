@@ -39,6 +39,10 @@ full*/
 # PHP / Composer
 /vendor/
 
+# PHP API secrets
+apps/php-api/config.php
+apps/config-vault.php
+
 # WordPress (site-level artifacts)
 wp-content/uploads/
 wp-content/upgrade/
