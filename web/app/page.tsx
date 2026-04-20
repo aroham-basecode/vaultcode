@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { createEmptyVault, decryptVault, encryptVault } from '@pm/shared';
-import type { EncryptedVaultV1, VaultBlobV1, VaultItem } from '@pm/shared';
+import { createEmptyVault, decryptVault, encryptVault } from '../lib/vault';
+import type { EncryptedVaultV1, VaultBlobV1, VaultItem } from '../lib/vault';
 import { apiGetVault, apiLogin, apiPutVault, apiRegister } from '../lib/api';
 
 const TOKEN_KEY = 'pm_token_v1';

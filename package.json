@@ -12,8 +12,11 @@
     "dev": "npm --prefix web run dev",
     "dev:web": "npm --prefix web run dev",
     "dev:mobile": "npm --prefix apps/mobile run start",
-    "build": "npm --prefix web run build",
-    "build:web": "npm --prefix web run build"
+    "build": "npm --prefix web install && npm --prefix web run build",
+    "build:web": "npm --prefix web run build",
+    "build:shared": "npm --prefix packages/shared run build",
+    "build:api": "npm run build:shared && npm --prefix apps/api run build",
+    "deploy:prepare": "npm run build:shared && npm run build:api && npm --prefix apps/api exec prisma generate"
   },
   "keywords": [],
   "author": "",

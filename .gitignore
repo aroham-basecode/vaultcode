@@ -59,6 +59,8 @@ wp-content/woocommerce/
 
 # Archives
 *.zip
+zip/
+
 
 # Local docs
 *_HI.md
