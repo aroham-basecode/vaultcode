@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { apiForgotPassword, apiGetVault, apiLogin, apiPutVault, apiRegister, apiResetPassword } from '../lib/api';
 import type { EncryptedVaultV1, VaultBlobV1, VaultItem } from '../lib/vault';
 import { createEmptyVault, decryptVault, encryptVault } from '../lib/vault';
+import { ZipWriter, BlobWriter, TextReader } from '@zip.js/zip.js';
 
 const TOKEN_KEY = 'pm_token_v1';
 
@@ -68,6 +69,20 @@ function buildLoginsCsv(items: VaultItem[]): string {
 
 function downloadText(filename: string, text: string): void {
   const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadZipCsv(filename: string, csvFilename: string, csvText: string, password: string): Promise<void> {
+  const writer = new ZipWriter(new BlobWriter('application/zip'), { password });
+  await writer.add(csvFilename, new TextReader(csvText));
+  const blob = await writer.close();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -904,13 +919,16 @@ function VaultScreen(props: {
             <button
               type="button"
               className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition"
-              onClick={() => {
+              onClick={async () => {
                 const csv = buildLoginsCsv(props.vault.items);
                 const stamp = new Date().toISOString().slice(0, 10);
-                downloadText(`vaultcode-logins-${stamp}.csv`, csv);
+                const suggested = (typeof window !== 'undefined' && window.localStorage.getItem('pm_master_pw_hint')) || '';
+                const pw = window.prompt('Set a password for the ZIP file (keep it safe).', suggested) ?? '';
+                if (!pw) return;
+                await downloadZipCsv(`vaultcode-logins-${stamp}.zip`, `vaultcode-logins-${stamp}.csv`, csv, pw);
               }}
             >
-              Export CSV
+              Export ZIP (Password)
             </button>
             <label className="cursor-pointer rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition">
               Import CSV

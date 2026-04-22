@@ -9,11 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "next": "^15",
+    "@tailwindcss/postcss": "^4.1.3",
+    "next": "^15.2.1",
+    "postcss": "^8.5.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "@noble/ciphers": "^1.3.0",
     "@noble/hashes": "^2.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@zip.js/zip.js": "^2.7.62"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
