@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(32) NOT NULL,
   email VARCHAR(255) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
+  email_verified_at DATETIME(3) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
@@ -18,6 +19,20 @@ CREATE TABLE IF NOT EXISTS vaults (
   PRIMARY KEY (id),
   UNIQUE KEY uk_vaults_user_id (user_id),
   CONSTRAINT fk_vaults_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS auth_otps (
+  id VARCHAR(32) NOT NULL,
+  user_id VARCHAR(32) NOT NULL,
+  purpose ENUM('verify_email','reset_password') NOT NULL,
+  code_hash VARCHAR(64) NOT NULL,
+  expires_at DATETIME(3) NOT NULL,
+  used_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_auth_otps_user_purpose_created (user_id, purpose, created_at),
+  KEY idx_auth_otps_expires (expires_at),
+  CONSTRAINT fk_auth_otps_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS sessions (

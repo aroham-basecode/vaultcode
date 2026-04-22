@@ -137,9 +137,27 @@ function IconTrash() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <path d="M10 11v6" /><path d="M14 11v6" />
       <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  );
+}
+
+function IconExternalLink() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  );
+}
+
+function IconChevronDown({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
     </svg>
   );
 }
@@ -304,6 +322,24 @@ function UnlockScreen(props: {
             </div>
           </div>
 
+          {!props.hasVault && !props.loading && (
+            <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 text-amber-400 text-base leading-none">⚠️</span>
+                <div>
+                  <div className="text-sm font-semibold text-amber-400">Important Warning</div>
+                  <div className="mt-1 text-xs text-amber-300/80 leading-relaxed">
+                    Your master password <span className="font-bold text-amber-300">cannot be recovered</span> if forgotten.
+                    It is never sent to our servers — your vault can only be decrypted by you.
+                    <br /><br />
+                    <span className="font-semibold text-amber-300">Please write it down and keep it in a safe place.</span>
+                    If you lose it, all your saved passwords will be permanently inaccessible.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {props.error && (
             <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
               {props.error}
@@ -372,6 +408,9 @@ function UnlockScreen(props: {
 function VaultCard(props: {
   item: VaultItem;
   onDelete: () => void;
+  expanded: boolean;
+  onToggle: () => void;
+  onPrefill: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
   const { copied, copy } = useCopy();
@@ -379,9 +418,9 @@ function VaultCard(props: {
   const color = avatarColor(props.item.title);
 
   return (
-    <div className="group rounded-2xl bg-slate-800 border border-slate-700 p-4 hover:border-slate-600 transition">
-      <div className="flex items-start gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white ${color}`}>
+    <div className="group rounded-xl bg-slate-800 border border-slate-700 p-3 hover:border-slate-600 transition">
+      <div className="flex items-start gap-2.5">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white ${color}`}>
           {initials}
         </div>
         <div className="min-w-0 flex-1">
@@ -392,24 +431,54 @@ function VaultCard(props: {
                 <div className="text-xs text-slate-500 truncate">{props.item.host}</div>
               )}
             </div>
-            <button
-              onClick={props.onDelete}
-              className="shrink-0 rounded-lg p-1.5 text-slate-600 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition"
-            >
-              <IconTrash />
-            </button>
+            <div className="shrink-0 flex items-center gap-1">
+              {props.item.url && (
+                <button
+                  onClick={() => {
+                    props.onPrefill();
+                    window.open(props.item.url!, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="rounded-lg p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition"
+                  title="Open"
+                  type="button"
+                >
+                  <IconExternalLink />
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  props.onPrefill();
+                  props.onToggle();
+                }}
+                className="rounded-lg p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition"
+                title={props.expanded ? 'Collapse' : 'Expand'}
+                type="button"
+              >
+                <IconChevronDown className={props.expanded ? 'rotate-180 transition-transform' : 'transition-transform'} />
+              </button>
+              <button
+                onClick={props.onDelete}
+                className="rounded-lg p-1 text-slate-600 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition"
+                title="Delete"
+                type="button"
+              >
+                <IconTrash />
+              </button>
+            </div>
           </div>
 
-          <div className="mt-3 space-y-2">
+          {props.expanded && (
+            <div className="mt-2 space-y-1.5">
             {props.item.username && (
-              <div className="flex items-center justify-between rounded-lg bg-slate-900 px-3 py-2">
+              <div className="flex items-center justify-between rounded-lg bg-slate-900 px-2.5 py-1.5">
                 <div className="min-w-0">
-                  <div className="text-xs text-slate-500">Username</div>
-                  <div className="text-sm text-slate-300 truncate">{props.item.username}</div>
+                  <div className="text-[11px] text-slate-500">Username</div>
+                  <div className="text-xs text-slate-300 truncate">{props.item.username}</div>
                 </div>
                 <button
                   onClick={() => copy(props.item.username!, `${props.item.id}-user`)}
-                  className={`ml-2 shrink-0 rounded-lg p-1.5 transition ${copied === `${props.item.id}-user` ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+                  className={`ml-2 shrink-0 rounded-lg p-1 transition ${copied === `${props.item.id}-user` ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+                  type="button"
                 >
                   <IconCopy done={copied === `${props.item.id}-user`} />
                 </button>
@@ -417,23 +486,25 @@ function VaultCard(props: {
             )}
 
             {props.item.password && (
-              <div className="flex items-center justify-between rounded-lg bg-slate-900 px-3 py-2">
+              <div className="flex items-center justify-between rounded-lg bg-slate-900 px-2.5 py-1.5">
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-slate-500">Password</div>
-                  <div className="font-mono text-sm text-slate-300 truncate">
+                  <div className="text-[11px] text-slate-500">Password</div>
+                  <div className="font-mono text-xs text-slate-300 truncate">
                     {revealed ? props.item.password : '••••••••••••'}
                   </div>
                 </div>
                 <div className="ml-2 flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => setRevealed(!revealed)}
-                    className="rounded-lg p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition"
+                    className="rounded-lg p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition"
+                    type="button"
                   >
                     <IconEye off={revealed} />
                   </button>
                   <button
                     onClick={() => copy(props.item.password!, `${props.item.id}-pw`)}
-                    className={`rounded-lg p-1.5 transition ${copied === `${props.item.id}-pw` ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+                    className={`rounded-lg p-1 transition ${copied === `${props.item.id}-pw` ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+                    type="button"
                   >
                     <IconCopy done={copied === `${props.item.id}-pw`} />
                   </button>
@@ -446,12 +517,13 @@ function VaultCard(props: {
                 href={props.item.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs text-indigo-400 hover:text-indigo-300 transition truncate"
+                className="flex items-center gap-2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] text-indigo-400 hover:text-indigo-300 transition truncate"
               >
                 <span className="truncate">{props.item.url}</span>
               </a>
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -462,6 +534,7 @@ function VaultCard(props: {
 
 function AddLoginForm(props: {
   onAdd: (form: { title: string; host: string; username: string; password: string; url: string }) => void;
+  prefill?: Partial<{ title: string; host: string; username: string; password: string; url: string }> | null;
 }) {
   const [title, setTitle] = useState('');
   const [host, setHost] = useState('');
@@ -470,6 +543,15 @@ function AddLoginForm(props: {
   const [url, setUrl] = useState('');
   const [showPw, setShowPw] = useState(false);
   const strength = password ? getStrength(password) : null;
+
+  useEffect(() => {
+    if (!props.prefill) return;
+    if (typeof props.prefill.title === 'string') setTitle(props.prefill.title);
+    if (typeof props.prefill.host === 'string') setHost(props.prefill.host);
+    if (typeof props.prefill.username === 'string') setUsername(props.prefill.username);
+    if (typeof props.prefill.password === 'string') { setPassword(props.prefill.password); setShowPw(true); }
+    if (typeof props.prefill.url === 'string') setUrl(props.prefill.url);
+  }, [props.prefill]);
 
   function handleSave() {
     if (!title.trim()) return;
@@ -571,6 +653,8 @@ function VaultScreen(props: {
   const [search, setSearch] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
   const [importOk, setImportOk] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string }> | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -650,7 +734,7 @@ function VaultScreen(props: {
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <AddLoginForm onAdd={props.onAdd} />
+            <AddLoginForm onAdd={props.onAdd} prefill={prefill} />
           </div>
 
           <div className="lg:col-span-3">
@@ -681,9 +765,22 @@ function VaultScreen(props: {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filtered.map((item) => (
-                  <VaultCard key={item.id} item={item} onDelete={() => props.onDelete(item.id)} />
+                  <VaultCard
+                    key={item.id}
+                    item={item}
+                    expanded={expandedId === item.id}
+                    onToggle={() => setExpandedId((cur) => (cur === item.id ? null : item.id))}
+                    onPrefill={() => setPrefill({
+                      title: item.title ?? '',
+                      host: item.host ?? '',
+                      username: item.username ?? '',
+                      password: item.password ?? '',
+                      url: item.url ?? '',
+                    })}
+                    onDelete={() => props.onDelete(item.id)}
+                  />
                 ))}
               </div>
             )}

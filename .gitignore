@@ -8,11 +8,16 @@
 # Editor/IDE
 .idea/
 .vscode/
+.claude/
 *.swp
 *~
 
 # Apps not used
 apps/api/
+apps/
+
+# PHP backend (not committed)
+apps/php-api/
 
 # Node
 node_modules/
@@ -61,6 +66,9 @@ wp-content/woocommerce/
 
 # Logs
 *.log
+
+# PHP API logs
+apps/php-api/logs/
 
 # Archives
 *.zip
