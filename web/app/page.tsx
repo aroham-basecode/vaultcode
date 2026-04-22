@@ -61,7 +61,7 @@ function buildLoginsCsv(items: VaultItem[]): string {
   const headers = ['Title', 'Username', 'Password', 'Host', 'Login URL'];
   const rows = items
     .filter((i) => i.type === 'login')
-    .map((i) => [i.title ?? '', i.username ?? '', i.password ?? '', i.host ?? '', i.url ?? '']);
+    .map((i) => [i.title ?? '', i.username ?? '', i.password ? '********' : '', i.host ?? '', i.url ?? '']);
   const lines = [headers, ...rows].map((row) => row.map((v) => csvEscape(String(v ?? ''))).join(','));
   return lines.join('\n') + '\n';
 }
@@ -268,6 +268,134 @@ function AuthScreen(props: {
     }
   }
 
+  if (fpOpen) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="mb-8 flex flex-col items-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
+              <IconShield />
+            </div>
+            <h1 className="mt-4 text-2xl font-bold text-white">VaultCode</h1>
+            <p className="mt-1 text-sm text-slate-400">Reset your account password</p>
+          </div>
+
+          <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-white">Reset password</div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {fpStep === 'request' ? 'We will email you a 6-digit code.' : 'Enter the code and choose a new password.'}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="rounded-lg p-1 text-slate-500 hover:text-slate-200 hover:bg-slate-700 transition"
+                onClick={() => setFpOpen(false)}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {fpError && (
+              <div className="mt-3 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+                {fpError}
+              </div>
+            )}
+
+            <div className="mt-3 space-y-3">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
+                <input
+                  className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                  value={fpEmail}
+                  onChange={(e) => setFpEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  type="email"
+                />
+              </div>
+
+              {fpStep === 'reset' && (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Code</label>
+                    <input
+                      className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                      value={fpCode}
+                      onChange={(e) => setFpCode(e.target.value)}
+                      placeholder="123456"
+                      type="text"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">New password</label>
+                    <input
+                      className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                      value={fpNewPw}
+                      onChange={(e) => setFpNewPw(e.target.value)}
+                      placeholder="New password"
+                      type="password"
+                    />
+                  </div>
+                </>
+              )}
+
+              {fpStep === 'request' ? (
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50 transition"
+                  disabled={fpBusy}
+                  onClick={() => void handleForgotRequest()}
+                >
+                  {fpBusy ? 'Sending…' : 'Send code'}
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50 transition"
+                    disabled={fpBusy}
+                    onClick={() => void handleForgotReset()}
+                  >
+                    {fpBusy ? 'Resetting…' : 'Reset password'}
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full text-xs font-medium text-slate-400 hover:text-slate-200 transition"
+                    disabled={fpBusy}
+                    onClick={() => setFpStep('request')}
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  className="text-xs font-medium text-slate-400 hover:text-slate-200 transition"
+                  onClick={() => { setFpOpen(false); props.setMode('login'); }}
+                >
+                  Back to Sign In
+                </button>
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-slate-400 hover:text-slate-200 transition"
+                    onClick={() => { setFpOpen(false); props.setMode('register'); }}
+                  >
+                    Create Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -361,101 +489,6 @@ function AuthScreen(props: {
             )}
           </div>
         </div>
-
-        {fpOpen && (
-          <div className="mt-4 rounded-2xl bg-slate-800 border border-slate-700 p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="font-semibold text-white">Reset password</div>
-                <div className="mt-1 text-xs text-slate-500">
-                  {fpStep === 'request' ? 'We will email you a 6-digit code.' : 'Enter the code and choose a new password.'}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="rounded-lg p-1 text-slate-500 hover:text-slate-200 hover:bg-slate-700 transition"
-                onClick={() => setFpOpen(false)}
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            {fpError && (
-              <div className="mt-3 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-                {fpError}
-              </div>
-            )}
-
-            <div className="mt-3 space-y-3">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
-                <input
-                  className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
-                  value={fpEmail}
-                  onChange={(e) => setFpEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  type="email"
-                />
-              </div>
-
-              {fpStep === 'reset' && (
-                <>
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Code</label>
-                    <input
-                      className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
-                      value={fpCode}
-                      onChange={(e) => setFpCode(e.target.value)}
-                      placeholder="123456"
-                      type="text"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">New password</label>
-                    <input
-                      className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
-                      value={fpNewPw}
-                      onChange={(e) => setFpNewPw(e.target.value)}
-                      placeholder="New password"
-                      type="password"
-                    />
-                  </div>
-                </>
-              )}
-
-              {fpStep === 'request' ? (
-                <button
-                  type="button"
-                  className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50 transition"
-                  disabled={fpBusy}
-                  onClick={() => void handleForgotRequest()}
-                >
-                  {fpBusy ? 'Sending…' : 'Send code'}
-                </button>
-              ) : (
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50 transition"
-                    disabled={fpBusy}
-                    onClick={() => void handleForgotReset()}
-                  >
-                    {fpBusy ? 'Resetting…' : 'Reset password'}
-                  </button>
-                  <button
-                    type="button"
-                    className="w-full text-xs font-medium text-slate-400 hover:text-slate-200 transition"
-                    disabled={fpBusy}
-                    onClick={() => setFpStep('request')}
-                  >
-                    Back
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
