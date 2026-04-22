@@ -7,6 +7,23 @@ import { createEmptyVault, decryptVault, encryptVault } from '../lib/vault';
 import { ZipWriter, BlobWriter, TextReader } from '@zip.js/zip.js';
 
 const TOKEN_KEY = 'pm_token_v1';
+const THEME_KEY = 'vc_theme';
+
+function getTheme(): 'light' | 'dark' {
+  try {
+    const t = document.documentElement.dataset.theme;
+    return t === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+function setTheme(next: 'light' | 'dark') {
+  try {
+    document.documentElement.dataset.theme = next;
+    window.localStorage.setItem(THEME_KEY, next);
+  } catch {}
+}
 
 function nowIso() { return new Date().toISOString(); }
 
@@ -250,6 +267,13 @@ function AuthScreen(props: {
   const [fpNewPw, setFpNewPw] = useState('');
   const [fpBusy, setFpBusy] = useState(false);
   const [fpError, setFpError] = useState<string | null>(null);
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
+
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    setThemeState(next);
+  }
 
   async function handleForgotRequest() {
     setFpError(null);
@@ -285,7 +309,7 @@ function AuthScreen(props: {
 
   if (fpOpen) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--vc-bg)] text-[var(--vc-text)] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="mb-8 flex flex-col items-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
@@ -295,7 +319,7 @@ function AuthScreen(props: {
             <p className="mt-1 text-sm text-slate-400">Reset your account password</p>
           </div>
 
-          <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 shadow-2xl">
+          <div className="rounded-2xl bg-[var(--vc-panel)] border border-[var(--vc-border)] p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="font-semibold text-white">Reset password</div>
@@ -305,7 +329,7 @@ function AuthScreen(props: {
               </div>
               <button
                 type="button"
-                className="rounded-lg p-1 text-slate-500 hover:text-slate-200 hover:bg-slate-700 transition"
+                className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
                 onClick={() => setFpOpen(false)}
                 title="Close"
               >
@@ -323,7 +347,7 @@ function AuthScreen(props: {
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
                 <input
-                  className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                  className="mt-1.5 w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
                   value={fpEmail}
                   onChange={(e) => setFpEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -336,7 +360,7 @@ function AuthScreen(props: {
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Code</label>
                     <input
-                      className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                      className="mt-1.5 w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
                       value={fpCode}
                       onChange={(e) => setFpCode(e.target.value)}
                       placeholder="123456"
@@ -346,7 +370,7 @@ function AuthScreen(props: {
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">New password</label>
                     <input
-                      className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                      className="mt-1.5 w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
                       value={fpNewPw}
                       onChange={(e) => setFpNewPw(e.target.value)}
                       placeholder="New password"
@@ -412,18 +436,28 @@ function AuthScreen(props: {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--vc-bg)] text-[var(--vc-text)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center">
+        <div className="mb-8 flex flex-col items-center relative">
+          <div className="absolute right-0 top-0">
+            <button
+              type="button"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              onClick={toggleTheme}
+              title="Toggle theme"
+            >
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
+          </div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
             <IconShield />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-white">VaultCode</h1>
-          <p className="mt-1 text-sm text-slate-400">End-to-end encrypted password manager</p>
+          <h1 className="mt-4 text-2xl font-bold text-[var(--vc-text)]">VaultCode</h1>
+          <p className="mt-1 text-sm text-[var(--vc-muted)]">End-to-end encrypted password manager</p>
         </div>
 
-        <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 shadow-2xl">
-          <div className="mb-5 flex rounded-xl bg-slate-900 p-1">
+        <div className="rounded-2xl bg-[var(--vc-panel)] border border-[var(--vc-border)] p-6 shadow-2xl">
+          <div className="mb-5 flex rounded-xl bg-[var(--vc-panel-2)] p-1">
             {(['login', 'register'] as const).map((m) => (
               <button
                 key={m}
@@ -431,7 +465,7 @@ function AuthScreen(props: {
                 className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
                   props.mode === m
                     ? 'bg-indigo-500 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-[var(--vc-muted)] hover:text-[var(--vc-text)]'
                 }`}
               >
                 {m === 'login' ? 'Sign In' : 'Create Account'}
@@ -450,7 +484,7 @@ function AuthScreen(props: {
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
               <input
-                className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                className="mt-1.5 w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
                 value={props.email}
                 onChange={(e) => props.setEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -462,7 +496,7 @@ function AuthScreen(props: {
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Password</label>
               <div className="relative mt-1.5">
                 <input
-                  className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 pr-10 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                  className="w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 pr-10 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
                   value={props.password}
                   onChange={(e) => props.setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -471,7 +505,7 @@ function AuthScreen(props: {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--vc-muted)] hover:text-[var(--vc-text)]"
                   onClick={() => setShowPw(!showPw)}
                 >
                   <IconEye off={showPw} />
@@ -646,17 +680,17 @@ function VaultCard(props: {
   const color = avatarColor(props.item.title);
 
   return (
-    <div className="group rounded-xl bg-slate-800 border border-slate-700 p-3 hover:border-slate-600 transition">
+    <div className="group rounded-xl bg-[var(--vc-panel)] border border-[var(--vc-border)] px-3 py-2.5 hover:border-[var(--vc-border-2)] transition">
       <div className="flex items-start gap-2.5">
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white ${color}`}>
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white ${color}`}>
           {initials}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate font-semibold text-white">{props.item.title}</div>
+              <div className="truncate font-semibold text-[var(--vc-text)]">{props.item.title}</div>
               {props.item.host && (
-                <div className="text-xs text-slate-500 truncate">{props.item.host}</div>
+                <div className="text-xs text-[var(--vc-muted)] truncate">{props.item.host}</div>
               )}
             </div>
             <div className="shrink-0 flex items-center gap-1">
@@ -666,7 +700,7 @@ function VaultCard(props: {
                     props.onPrefill();
                     window.open(props.item.url!, '_blank', 'noopener,noreferrer');
                   }}
-                  className="rounded-lg p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition"
+                  className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
                   title="Open"
                   type="button"
                 >
@@ -678,7 +712,7 @@ function VaultCard(props: {
                   props.onPrefill();
                   props.onToggle();
                 }}
-                className="rounded-lg p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition"
+                className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
                 title={props.expanded ? 'Collapse' : 'Expand'}
                 type="button"
               >
@@ -686,7 +720,7 @@ function VaultCard(props: {
               </button>
               <button
                 onClick={props.onDelete}
-                className="rounded-lg p-1 text-slate-600 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition"
+                className="rounded-lg p-1 text-[var(--vc-muted-2)] opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition"
                 title="Delete"
                 type="button"
               >
@@ -698,14 +732,14 @@ function VaultCard(props: {
           {props.expanded && (
             <div className="mt-2 space-y-1.5">
             {props.item.username && (
-              <div className="flex items-center justify-between rounded-lg bg-slate-900 px-2.5 py-1.5">
+              <div className="flex items-center justify-between rounded-lg bg-[var(--vc-panel-2)] px-2.5 py-1.5">
                 <div className="min-w-0">
-                  <div className="text-[11px] text-slate-500">Username</div>
-                  <div className="text-xs text-slate-300 truncate">{props.item.username}</div>
+                  <div className="text-[11px] text-[var(--vc-muted)]">Username</div>
+                  <div className="text-xs text-[var(--vc-text)] truncate">{props.item.username}</div>
                 </div>
                 <button
                   onClick={() => copy(props.item.username!, `${props.item.id}-user`)}
-                  className={`ml-2 shrink-0 rounded-lg p-1 transition ${copied === `${props.item.id}-user` ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+                  className={`ml-2 shrink-0 rounded-lg p-1 transition ${copied === `${props.item.id}-user` ? 'text-emerald-500' : 'text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel)]'}`}
                   type="button"
                 >
                   <IconCopy done={copied === `${props.item.id}-user`} />
@@ -714,24 +748,24 @@ function VaultCard(props: {
             )}
 
             {props.item.password && (
-              <div className="flex items-center justify-between rounded-lg bg-slate-900 px-2.5 py-1.5">
+              <div className="flex items-center justify-between rounded-lg bg-[var(--vc-panel-2)] px-2.5 py-1.5">
                 <div className="min-w-0 flex-1">
-                  <div className="text-[11px] text-slate-500">Password</div>
-                  <div className="font-mono text-xs text-slate-300 truncate">
+                  <div className="text-[11px] text-[var(--vc-muted)]">Password</div>
+                  <div className="font-mono text-xs text-[var(--vc-text)] truncate">
                     {revealed ? props.item.password : '••••••••••••'}
                   </div>
                 </div>
                 <div className="ml-2 flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => setRevealed(!revealed)}
-                    className="rounded-lg p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition"
+                    className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel)] transition"
                     type="button"
                   >
                     <IconEye off={revealed} />
                   </button>
                   <button
                     onClick={() => copy(props.item.password!, `${props.item.id}-pw`)}
-                    className={`rounded-lg p-1 transition ${copied === `${props.item.id}-pw` ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+                    className={`rounded-lg p-1 transition ${copied === `${props.item.id}-pw` ? 'text-emerald-500' : 'text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel)]'}`}
                     type="button"
                   >
                     <IconCopy done={copied === `${props.item.id}-pw`} />
@@ -745,7 +779,7 @@ function VaultCard(props: {
                 href={props.item.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] text-indigo-400 hover:text-indigo-300 transition truncate"
+                className="flex items-center gap-2 rounded-lg bg-[var(--vc-panel-2)] px-2.5 py-1.5 text-[11px] text-indigo-500 hover:text-indigo-600 transition truncate"
               >
                 <span className="truncate">{props.item.url}</span>
               </a>
@@ -868,14 +902,12 @@ function FormField({ label, value, onChange, placeholder }: {
   );
 }
 
-// ── Vault Screen ───────────────────────────────────────────────────────────
-
 function VaultScreen(props: {
   vault: VaultBlobV1;
-  onLock: () => void;
   onAdd: (form: { title: string; host: string; username: string; password: string; url: string }) => void;
   onDelete: (id: string) => void;
   onImportCsv: (file: File) => Promise<void>;
+  onLock: () => void;
   onLogout: () => void;
 }) {
   const [search, setSearch] = useState('');
@@ -883,6 +915,13 @@ function VaultScreen(props: {
   const [importOk, setImportOk] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string }> | null>(null);
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
+
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    setThemeState(next);
+  }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -893,14 +932,14 @@ function VaultScreen(props: {
   }, [props.vault.items, search]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <header className="sticky top-0 z-10 border-b border-slate-700/60 bg-slate-900/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+    <div className="min-h-screen bg-[var(--vc-bg)] text-[var(--vc-text)]">
+      <header className="sticky top-0 z-10 border-b border-[var(--vc-border-2)] bg-[var(--vc-bg)]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
           <div className="flex items-center gap-2 mr-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-white">
               <IconShield />
             </div>
-            <span className="font-bold text-white hidden sm:block">VaultCode</span>
+            <span className="font-bold text-[var(--vc-text)] hidden sm:block">VaultCode</span>
           </div>
 
           <div className="relative flex-1 max-w-sm">
@@ -908,7 +947,7 @@ function VaultScreen(props: {
               <IconSearch />
             </div>
             <input
-              className="w-full rounded-xl bg-slate-800 border border-slate-700 pl-9 pr-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+              className="w-full rounded-xl bg-[var(--vc-panel)] border border-[var(--vc-border)] pl-9 pr-3 py-2 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search logins…"
@@ -918,7 +957,15 @@ function VaultScreen(props: {
           <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
-              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              onClick={toggleTheme}
+              title="Toggle theme"
+            >
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
+            <button
+              type="button"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
               onClick={async () => {
                 const csv = buildLoginsCsv(props.vault.items);
                 const stamp = new Date().toISOString().slice(0, 10);
@@ -930,7 +977,7 @@ function VaultScreen(props: {
             >
               Export ZIP (Password)
             </button>
-            <label className="cursor-pointer rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition">
+            <label className="cursor-pointer rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition">
               Import CSV
               <input
                 type="file" accept="text/csv,.csv" className="hidden"
@@ -951,13 +998,13 @@ function VaultScreen(props: {
             </label>
             <button
               onClick={props.onLock}
-              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
             >
               Lock
             </button>
             <button
               onClick={props.onLogout}
-              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
             >
               Sign Out
             </button>
@@ -981,9 +1028,9 @@ function VaultScreen(props: {
 
           <div className="lg:col-span-3">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold text-white">
+              <h2 className="font-semibold text-[var(--vc-text)]">
                 Saved Logins
-                <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-400">
+                <span className="ml-2 rounded-full bg-[var(--vc-panel-2)] px-2 py-0.5 text-xs text-[var(--vc-muted)]">
                   {filtered.length}
                 </span>
               </h2>
@@ -1007,7 +1054,7 @@ function VaultScreen(props: {
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {filtered.map((item) => (
                   <VaultCard
                     key={item.id}

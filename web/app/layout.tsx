@@ -26,10 +26,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(() => {
+  try {
+    const stored = localStorage.getItem('vc_theme');
+    const theme = stored === 'light' || stored === 'dark'
+      ? stored
+      : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.dataset.theme = theme;
+  } catch {}
+})();`,
+          }}
+        />
         <div className="relative min-h-screen">
           {children}
           <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 p-3 text-center">
