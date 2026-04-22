@@ -239,8 +239,20 @@ function IconPlus() {
 
 function IconWand() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5" />
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 4V2" /><path d="M15 8V6" /><path d="M19 6h2" /><path d="M15 6h-2" />
+      <path d="M5 20l14-14" />
+      <path d="M7 18l-2 2" />
+      <path d="M6 13l5 5" />
+    </svg>
+  );
+}
+
+function IconPencil() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
     </svg>
   );
 }
@@ -672,7 +684,7 @@ function VaultCard(props: {
   onDelete: () => void;
   expanded: boolean;
   onToggle: () => void;
-  onPrefill: () => void;
+  onEdit: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
   const { copied, copy } = useCopy();
@@ -689,15 +701,19 @@ function VaultCard(props: {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="truncate font-semibold text-[var(--vc-text)]">{props.item.title}</div>
-              {props.item.host && (
-                <div className="text-xs text-[var(--vc-muted)] truncate">{props.item.host}</div>
-              )}
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                {props.item.username && (
+                  <div className="text-xs text-[var(--vc-muted)] truncate">{props.item.username}</div>
+                )}
+                {props.item.host && (
+                  <div className="text-[11px] text-[var(--vc-muted)] truncate">{props.item.host}</div>
+                )}
+              </div>
             </div>
             <div className="shrink-0 flex items-center gap-1">
               {props.item.url && (
                 <button
                   onClick={() => {
-                    props.onPrefill();
                     window.open(props.item.url!, '_blank', 'noopener,noreferrer');
                   }}
                   className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
@@ -708,8 +724,15 @@ function VaultCard(props: {
                 </button>
               )}
               <button
+                onClick={props.onEdit}
+                className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
+                title="Edit"
+                type="button"
+              >
+                <IconPencil />
+              </button>
+              <button
                 onClick={() => {
-                  props.onPrefill();
                   props.onToggle();
                 }}
                 className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
@@ -795,8 +818,10 @@ function VaultCard(props: {
 // ── Add Login Form ─────────────────────────────────────────────────────────
 
 function AddLoginForm(props: {
-  onAdd: (form: { title: string; host: string; username: string; password: string; url: string }) => void;
+  onSave: (form: { id?: string; title: string; host: string; username: string; password: string; url: string }) => void;
   prefill?: Partial<{ title: string; host: string; username: string; password: string; url: string }> | null;
+  editingId?: string | null;
+  onCancel?: () => void;
 }) {
   const [title, setTitle] = useState('');
   const [host, setHost] = useState('');
@@ -817,26 +842,38 @@ function AddLoginForm(props: {
 
   function handleSave() {
     if (!title.trim()) return;
-    props.onAdd({ title, host, username, password, url });
+    props.onSave({ id: props.editingId ?? undefined, title, host, username, password, url });
     setTitle(''); setHost(''); setUsername(''); setPassword(''); setUrl('');
   }
 
   return (
-    <div className="rounded-2xl bg-slate-800 border border-slate-700 p-5">
-      <div className="mb-4 flex items-center gap-2">
+    <div className="rounded-2xl bg-[var(--vc-panel)] border border-[var(--vc-border)] p-5">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400">
           <IconPlus />
         </div>
-        <h2 className="font-semibold text-white">Add New Login</h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-semibold text-[var(--vc-text)] truncate">{props.editingId ? 'Edit Login' : 'Add New Login'}</h2>
+          <div className="text-xs text-[var(--vc-muted)] truncate">{props.editingId ? 'Update your saved credential' : 'Save a new credential into your vault'}</div>
+        </div>
+        {props.onCancel && (
+          <button
+            type="button"
+            onClick={props.onCancel}
+            className="shrink-0 rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel-2)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+          >
+            Close
+          </button>
+        )}
       </div>
       <div className="space-y-3">
         <FormField label="Title" value={title} onChange={setTitle} placeholder="e.g. Gmail" />
         <FormField label="Username / Email" value={username} onChange={setUsername} placeholder="e.g. admin" />
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Password</label>
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--vc-muted)]">Password</label>
           <div className="relative mt-1.5">
             <input
-              className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 pr-16 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition font-mono"
+              className="w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 pr-16 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition font-mono"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -847,14 +884,14 @@ function AddLoginForm(props: {
                 type="button"
                 title="Generate password"
                 onClick={() => { setPassword(generatePassword()); setShowPw(true); }}
-                className="rounded-lg p-1.5 text-slate-500 hover:text-indigo-400 transition"
+                className="rounded-lg p-1.5 text-[var(--vc-muted)] hover:text-indigo-500 transition"
               >
                 <IconWand />
               </button>
               <button
                 type="button"
                 onClick={() => setShowPw(!showPw)}
-                className="rounded-lg p-1.5 text-slate-500 hover:text-slate-300 transition"
+                className="rounded-lg p-1.5 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
               >
                 <IconEye off={showPw} />
               </button>
@@ -864,10 +901,10 @@ function AddLoginForm(props: {
             <div className="mt-2">
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= strength.score ? strength.color : 'bg-slate-700'}`} />
+                  <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= strength.score ? strength.color : 'bg-[var(--vc-border)]'}`} />
                 ))}
               </div>
-              <div className="mt-1 text-xs text-slate-500">{strength.label}</div>
+              <div className="mt-1 text-xs text-[var(--vc-muted-2)]">{strength.label}</div>
             </div>
           )}
         </div>
@@ -878,7 +915,7 @@ function AddLoginForm(props: {
           disabled={!title.trim()}
           onClick={handleSave}
         >
-          Save Login
+          {props.editingId ? 'Update Login' : 'Save Login'}
         </button>
       </div>
     </div>
@@ -890,9 +927,9 @@ function FormField({ label, value, onChange, placeholder }: {
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</label>
+      <label className="text-xs font-semibold uppercase tracking-wide text-[var(--vc-muted)]">{label}</label>
       <input
-        className="mt-1.5 w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+        className="mt-1.5 w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -904,7 +941,7 @@ function FormField({ label, value, onChange, placeholder }: {
 
 function VaultScreen(props: {
   vault: VaultBlobV1;
-  onAdd: (form: { title: string; host: string; username: string; password: string; url: string }) => void;
+  onUpsert: (form: { id?: string; title: string; host: string; username: string; password: string; url: string }) => void;
   onDelete: (id: string) => void;
   onImportCsv: (file: File) => Promise<void>;
   onLock: () => void;
@@ -914,6 +951,8 @@ function VaultScreen(props: {
   const [importError, setImportError] = useState<string | null>(null);
   const [importOk, setImportOk] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string }> | null>(null);
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
 
@@ -1020,62 +1059,109 @@ function VaultScreen(props: {
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        <div className="grid gap-6 lg:grid-cols-5">
-          <div className="lg:col-span-2">
-            <AddLoginForm onAdd={props.onAdd} prefill={prefill} />
-          </div>
+      <main className={`mx-auto max-w-6xl px-4 py-6 ${editorOpen ? 'lg:pr-[420px]' : ''}`}>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-[var(--vc-text)]">
+            Saved Logins
+            <span className="ml-2 rounded-full bg-[var(--vc-panel-2)] px-2 py-0.5 text-xs text-[var(--vc-muted)]">
+              {filtered.length}
+            </span>
+          </h2>
 
-          <div className="lg:col-span-3">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold text-[var(--vc-text)]">
-                Saved Logins
-                <span className="ml-2 rounded-full bg-[var(--vc-panel-2)] px-2 py-0.5 text-xs text-[var(--vc-muted)]">
-                  {filtered.length}
-                </span>
-              </h2>
-              {search && (
-                <button onClick={() => setSearch('')} className="text-xs text-slate-500 hover:text-slate-300">
-                  Clear search
-                </button>
-              )}
-            </div>
-
-            {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 py-16 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800 text-slate-500 mb-3">
-                  <IconLock />
-                </div>
-                <div className="text-sm font-medium text-slate-400">
-                  {search ? 'No logins match your search' : 'No logins saved yet'}
-                </div>
-                <div className="mt-1 text-xs text-slate-600">
-                  {search ? 'Try a different search term' : 'Add your first login using the form'}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {filtered.map((item) => (
-                  <VaultCard
-                    key={item.id}
-                    item={item}
-                    expanded={expandedId === item.id}
-                    onToggle={() => setExpandedId((cur) => (cur === item.id ? null : item.id))}
-                    onPrefill={() => setPrefill({
-                      title: item.title ?? '',
-                      host: item.host ?? '',
-                      username: item.username ?? '',
-                      password: item.password ?? '',
-                      url: item.url ?? '',
-                    })}
-                    onDelete={() => props.onDelete(item.id)}
-                  />
-                ))}
-              </div>
+          <div className="flex items-center gap-2">
+            {search && (
+              <button onClick={() => setSearch('')} className="text-xs text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition">
+                Clear search
+              </button>
             )}
+            <button
+              type="button"
+              onClick={() => { setEditorOpen(true); setEditingId(null); setPrefill(null); }}
+              className="rounded-xl bg-indigo-500 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-400 transition"
+            >
+              Add Login
+            </button>
           </div>
         </div>
+
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--vc-border)] py-16 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--vc-panel)] text-[var(--vc-muted)] mb-3">
+              <IconLock />
+            </div>
+            <div className="text-sm font-medium text-[var(--vc-muted)]">
+              {search ? 'No logins match your search' : 'No logins saved yet'}
+            </div>
+            <div className="mt-1 text-xs text-[var(--vc-muted-2)]">
+              {search ? 'Try a different search term' : 'Add your first login using the button above'}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {filtered.map((item) => (
+              <VaultCard
+                key={item.id}
+                item={item}
+                expanded={expandedId === item.id}
+                onToggle={() => setExpandedId((cur) => (cur === item.id ? null : item.id))}
+                onEdit={() => {
+                  setEditorOpen(true);
+                  setEditingId(item.id);
+                  setPrefill({
+                    title: item.title ?? '',
+                    host: item.host ?? '',
+                    username: item.username ?? '',
+                    password: item.password ?? '',
+                    url: item.url ?? '',
+                  });
+                  if (expandedId !== item.id) setExpandedId(item.id);
+                }}
+                onDelete={() => props.onDelete(item.id)}
+              />
+            ))}
+          </div>
+        )}
       </main>
+
+      {editorOpen && (
+        <div className="fixed inset-0 z-20 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => { setEditorOpen(false); setEditingId(null); setPrefill(null); }}
+            aria-label="Close editor"
+          />
+          <div className="absolute right-0 top-0 h-full w-[92%] max-w-md border-l border-[var(--vc-border)] bg-[var(--vc-bg)] p-4 overflow-y-auto">
+            <AddLoginForm
+              onSave={(form) => {
+                props.onUpsert(form);
+                setEditorOpen(false);
+                setEditingId(null);
+                setPrefill(null);
+              }}
+              prefill={prefill}
+              editingId={editingId}
+              onCancel={() => { setEditorOpen(false); setEditingId(null); setPrefill(null); }}
+            />
+          </div>
+        </div>
+      )}
+
+      {editorOpen && (
+        <div className="hidden lg:block fixed right-0 top-14 z-20 h-[calc(100vh-3.5rem)] w-[420px] border-l border-[var(--vc-border)] bg-[var(--vc-bg)] p-4 overflow-y-auto">
+          <AddLoginForm
+            onSave={(form) => {
+              props.onUpsert(form);
+              setEditorOpen(false);
+              setEditingId(null);
+              setPrefill(null);
+            }}
+            prefill={prefill}
+            editingId={editingId}
+            onCancel={() => { setEditorOpen(false); setEditingId(null); setPrefill(null); }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -1182,15 +1268,26 @@ export default function Home() {
     setAuthEmail(''); setAuthPassword(''); setAuthError(null);
   }
 
-  async function handleAddLogin(form: { title: string; host: string; username: string; password: string; url: string }) {
+  async function handleUpsertLogin(form: { id?: string; title: string; host: string; username: string; password: string; url: string }) {
     if (!vault) return;
-    const item: VaultItem = {
-      id: newId(), type: 'login', title: form.title,
-      host: form.host || undefined, username: form.username || undefined,
-      password: form.password || undefined, url: form.url || undefined,
-      createdAt: nowIso(), updatedAt: nowIso(),
-    };
-    const next = { ...vault, updatedAt: nowIso(), items: [item, ...vault.items] };
+    const t = nowIso();
+    const nextItems = form.id
+      ? vault.items.map((i) => i.id !== form.id ? i : ({
+        ...i,
+        title: form.title,
+        host: form.host || undefined,
+        username: form.username || undefined,
+        password: form.password || undefined,
+        url: form.url || undefined,
+        updatedAt: t,
+      }))
+      : ([{
+        id: newId(), type: 'login' as const, title: form.title,
+        host: form.host || undefined, username: form.username || undefined,
+        password: form.password || undefined, url: form.url || undefined,
+        createdAt: t, updatedAt: t,
+      }, ...vault.items]);
+    const next = { ...vault, updatedAt: t, items: nextItems };
     setVault(next);
     await persist(next, masterPassword);
   }
@@ -1251,7 +1348,7 @@ export default function Home() {
     <VaultScreen
       vault={vault ?? createEmptyVault()}
       onLock={handleLock}
-      onAdd={(form) => void handleAddLogin(form)}
+      onUpsert={(form) => void handleUpsertLogin(form)}
       onDelete={(id) => void handleDelete(id)}
       onImportCsv={handleImportCsv}
       onLogout={handleLogout}
