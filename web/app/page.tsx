@@ -25,7 +25,29 @@ function setTheme(next: 'light' | 'dark') {
   } catch {}
 }
 
-function nowIso() { return new Date().toISOString(); }
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function formatDateShort(iso: string | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+}
+
+function autoCategoryFor(item: Partial<Pick<VaultItem, 'title' | 'url' | 'host'>>): string {
+  const s = `${item.title ?? ''} ${item.url ?? ''} ${item.host ?? ''}`.toLowerCase();
+  if (/(gmail|google|g suite|youtube)/.test(s)) return 'Google';
+  if (/(facebook|instagram|whatsapp|meta|twitter|x\.com|linkedin)/.test(s)) return 'Social';
+  if (/(bank|hdfc|icici|sbi|axis|kotak|paytm|phonepe|gpay|upi|wallet)/.test(s)) return 'Banking';
+  if (/(aws|azure|gcp|cloud|digitalocean|hostinger|cpanel|server|ssh|vps)/.test(s)) return 'Hosting';
+  if (/(github|gitlab|bitbucket|jira|confluence)/.test(s)) return 'Work';
+  if (/(netflix|primevideo|hotstar|spotify|music|stream)/.test(s)) return 'Entertainment';
+  if (/(email|mail)/.test(s)) return 'Email';
+  if (/(shopping|amazon|flipkart|myntra|store)/.test(s)) return 'Shopping';
+  return 'General';
+}
 
 function newId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -685,11 +707,17 @@ function VaultCard(props: {
   expanded: boolean;
   onToggle: () => void;
   onEdit: () => void;
+  health?: {
+    isWeak: boolean;
+    reusedCount: number;
+    autoCategory: string;
+  };
 }) {
   const [revealed, setRevealed] = useState(false);
   const { copied, copy } = useCopy();
   const initials = (props.item.title || '?').slice(0, 2).toUpperCase();
   const color = avatarColor(props.item.title);
+  const effectiveCategory = (props.item.category && props.item.category.trim()) ? props.item.category.trim() : props.health?.autoCategory;
 
   return (
     <div className="group rounded-xl bg-[var(--vc-panel)] border border-[var(--vc-border)] px-3 py-2.5 hover:border-[var(--vc-border-2)] transition">
@@ -707,6 +735,21 @@ function VaultCard(props: {
                 )}
                 {props.item.host && (
                   <div className="text-[11px] text-[var(--vc-muted)] truncate">{props.item.host}</div>
+                )}
+                {effectiveCategory && (
+                  <div className="text-[11px] rounded-full bg-[var(--vc-panel-2)] px-2 py-0.5 text-[var(--vc-muted)]">
+                    {effectiveCategory}
+                  </div>
+                )}
+                {props.health?.isWeak && (
+                  <div className="text-[11px] rounded-full bg-red-500/10 px-2 py-0.5 text-red-500">
+                    Weak
+                  </div>
+                )}
+                {!!props.health?.reusedCount && props.health.reusedCount > 1 && (
+                  <div className="text-[11px] rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-500">
+                    Similar x{props.health.reusedCount}
+                  </div>
                 )}
               </div>
             </div>
@@ -777,6 +820,9 @@ function VaultCard(props: {
                   <div className="font-mono text-xs text-[var(--vc-text)] truncate">
                     {revealed ? props.item.password : '••••••••••••'}
                   </div>
+                  <div className="mt-0.5 text-[11px] text-[var(--vc-muted-2)]">
+                    Updated {formatDateShort(props.item.updatedAt)}
+                  </div>
                 </div>
                 <div className="ml-2 flex shrink-0 items-center gap-1">
                   <button
@@ -818,8 +864,8 @@ function VaultCard(props: {
 // ── Add Login Form ─────────────────────────────────────────────────────────
 
 function AddLoginForm(props: {
-  onSave: (form: { id?: string; title: string; host: string; username: string; password: string; url: string }) => void;
-  prefill?: Partial<{ title: string; host: string; username: string; password: string; url: string }> | null;
+  onSave: (form: { id?: string; title: string; host: string; username: string; password: string; url: string; category: string }) => void;
+  prefill?: Partial<{ title: string; host: string; username: string; password: string; url: string; category: string }> | null;
   editingId?: string | null;
   onCancel?: () => void;
 }) {
@@ -828,6 +874,7 @@ function AddLoginForm(props: {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [url, setUrl] = useState('');
+  const [category, setCategory] = useState('');
   const [showPw, setShowPw] = useState(false);
   const strength = password ? getStrength(password) : null;
 
@@ -838,12 +885,20 @@ function AddLoginForm(props: {
     if (typeof props.prefill.username === 'string') setUsername(props.prefill.username);
     if (typeof props.prefill.password === 'string') { setPassword(props.prefill.password); setShowPw(false); }
     if (typeof props.prefill.url === 'string') setUrl(props.prefill.url);
+    if (typeof props.prefill.category === 'string') setCategory(props.prefill.category);
   }, [props.prefill]);
+
+  useEffect(() => {
+    if (props.editingId) return;
+    if (category.trim()) return;
+    setCategory(autoCategoryFor({ title, url, host }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, url, host]);
 
   function handleSave() {
     if (!title.trim()) return;
-    props.onSave({ id: props.editingId ?? undefined, title, host, username, password, url });
-    setTitle(''); setHost(''); setUsername(''); setPassword(''); setUrl('');
+    props.onSave({ id: props.editingId ?? undefined, title, host, username, password, url, category });
+    setTitle(''); setHost(''); setUsername(''); setPassword(''); setUrl(''); setCategory('');
   }
 
   return (
@@ -868,6 +923,7 @@ function AddLoginForm(props: {
       </div>
       <div className="space-y-3">
         <FormField label="Title" value={title} onChange={setTitle} placeholder="e.g. Gmail" />
+        <FormField label="Category" value={category} onChange={setCategory} placeholder="e.g. Banking" />
         <FormField label="Username / Email" value={username} onChange={setUsername} placeholder="e.g. admin" />
         <div>
           <label className="text-xs font-semibold uppercase tracking-wide text-[var(--vc-muted)]">Password</label>
@@ -941,7 +997,7 @@ function FormField({ label, value, onChange, placeholder }: {
 
 function VaultScreen(props: {
   vault: VaultBlobV1;
-  onUpsert: (form: { id?: string; title: string; host: string; username: string; password: string; url: string }) => void;
+  onUpsert: (form: { id?: string; title: string; host: string; username: string; password: string; url: string; category: string }) => void;
   onDelete: (id: string) => void;
   onImportCsv: (file: File) => Promise<void>;
   onLock: () => void;
@@ -953,8 +1009,18 @@ function VaultScreen(props: {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string }> | null>(null);
+  const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string; category: string }> | null>(null);
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
+
+  const reuseMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const it of props.vault.items) {
+      const pw = it.password;
+      if (!pw) continue;
+      map.set(pw, (map.get(pw) ?? 0) + 1);
+    }
+    return map;
+  }, [props.vault.items]);
 
   function toggleTheme() {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -1113,10 +1179,16 @@ function VaultScreen(props: {
                     username: item.username ?? '',
                     password: item.password ?? '',
                     url: item.url ?? '',
+                    category: item.category ?? '',
                   });
                   if (expandedId !== item.id) setExpandedId(item.id);
                 }}
                 onDelete={() => props.onDelete(item.id)}
+                health={{
+                  isWeak: Boolean(item.password && (getStrength(item.password).score <= 2)),
+                  reusedCount: item.password ? (reuseMap.get(item.password) ?? 0) : 0,
+                  autoCategory: autoCategoryFor(item),
+                }}
               />
             ))}
           </div>
@@ -1268,7 +1340,7 @@ export default function Home() {
     setAuthEmail(''); setAuthPassword(''); setAuthError(null);
   }
 
-  async function handleUpsertLogin(form: { id?: string; title: string; host: string; username: string; password: string; url: string }) {
+  async function handleUpsertLogin(form: { id?: string; title: string; host: string; username: string; password: string; url: string; category: string }) {
     if (!vault) return;
     const t = nowIso();
     const nextItems = form.id
@@ -1279,12 +1351,14 @@ export default function Home() {
         username: form.username || undefined,
         password: form.password || undefined,
         url: form.url || undefined,
+        category: form.category || undefined,
         updatedAt: t,
       }))
       : ([{
         id: newId(), type: 'login' as const, title: form.title,
         host: form.host || undefined, username: form.username || undefined,
         password: form.password || undefined, url: form.url || undefined,
+        category: form.category || undefined,
         createdAt: t, updatedAt: t,
       }, ...vault.items]);
     const next = { ...vault, updatedAt: t, items: nextItems };
@@ -1310,7 +1384,8 @@ export default function Home() {
       const url = r['Login URL'] ?? r['login url'] ?? r['url'] ?? '';
       if (!title && !username && !password && !url && !host) return null;
       const t = nowIso();
-      return { id: newId(), type: 'login' as const, title: title || '(no title)', host: host || undefined, username: username || undefined, password: password || undefined, url: url || undefined, createdAt: t, updatedAt: t };
+      const autoCat = autoCategoryFor({ title, host, url });
+      return { id: newId(), type: 'login' as const, title: title || '(no title)', host: host || undefined, username: username || undefined, password: password || undefined, url: url || undefined, category: autoCat || undefined, createdAt: t, updatedAt: t };
     }).filter(Boolean) as VaultItem[];
     const next = { ...vault, updatedAt: nowIso(), items: [...items, ...vault.items] };
     setVault(next);

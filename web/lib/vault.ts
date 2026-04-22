@@ -8,6 +8,7 @@ export type VaultItem = {
   password?: string;
   url?: string;
   host?: string;
+  category?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
