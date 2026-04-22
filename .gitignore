@@ -14,7 +14,10 @@
 
 # Apps not used
 apps/api/
-apps/
+apps/mobile/
+
+# Browser extension (not committed)
+apps/extension/
 
 # PHP backend (not committed)
 apps/php-api/
