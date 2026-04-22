@@ -61,3 +61,17 @@ export async function apiPutVault(token: string, encryptedVault: unknown, versio
     body: JSON.stringify({ encryptedVault, version }),
   });
 }
+
+export async function apiForgotPassword(email: string): Promise<{ sent: boolean }> {
+  return jsonFetch<{ sent: boolean }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function apiResetPassword(email: string, code: string, newPassword: string): Promise<AuthResponse> {
+  return jsonFetch<AuthResponse>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, code, newPassword }),
+  });
+}
