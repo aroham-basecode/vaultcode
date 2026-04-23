@@ -270,6 +270,54 @@ function IconWand() {
   );
 }
 
+function IconSun() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" /><path d="M12 20v2" /><path d="M4.93 4.93l1.41 1.41" /><path d="M17.66 17.66l1.41 1.41" />
+      <path d="M2 12h2" /><path d="M20 12h2" /><path d="M4.93 19.07l1.41-1.41" /><path d="M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+function IconMoon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+    </svg>
+  );
+}
+
+function IconDownload() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M12 15V3" />
+    </svg>
+  );
+}
+
+function IconUpload() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M17 8l-5-5-5 5" />
+      <path d="M12 3v12" />
+    </svg>
+  );
+}
+
+function IconLogOut() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
 function IconPencil() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -591,28 +639,46 @@ function UnlockScreen(props: {
 }) {
   const [showPw, setShowPw] = useState(false);
   const strength = props.hasVault ? null : getStrength(props.password);
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
+
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    setThemeState(next);
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--vc-bg)] text-[var(--vc-text)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center">
+        <div className="mb-8 flex flex-col items-center relative">
+          <div className="absolute right-0 top-0">
+            <button
+              type="button"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] p-2 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              onClick={toggleTheme}
+              title="Toggle theme"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <IconSun /> : <IconMoon />}
+            </button>
+          </div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
             <IconShield />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-white">VaultCode</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="mt-4 text-2xl font-bold text-[var(--vc-text)]">VaultCode</h1>
+          <p className="mt-1 text-sm text-[var(--vc-muted)]">
             {props.hasVault ? 'Enter your master password to unlock' : 'Create a master password for your vault'}
           </p>
         </div>
 
-        <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 shadow-2xl">
-          <div className="mb-5 flex items-center gap-3 rounded-xl bg-slate-900 px-4 py-3">
+        <div className="rounded-2xl bg-[var(--vc-panel)] border border-[var(--vc-border)] p-6 shadow-2xl">
+          <div className="mb-5 flex items-center gap-3 rounded-xl bg-[var(--vc-panel-2)] px-4 py-3">
             <div className="text-indigo-400"><IconLock /></div>
             <div>
-              <div className="text-sm font-semibold text-white">
+              <div className="text-sm font-semibold text-[var(--vc-text)]">
                 {props.hasVault ? 'Vault Locked' : 'New Vault'}
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-[var(--vc-muted-2)]">
                 {props.hasVault ? 'Encrypted on server' : 'Will be encrypted with your master password'}
               </div>
             </div>
@@ -643,17 +709,17 @@ function UnlockScreen(props: {
           )}
 
           {props.loading ? (
-            <div className="py-6 text-center text-sm text-slate-500">Loading vault…</div>
+            <div className="py-6 text-center text-sm text-[var(--vc-muted-2)]">Loading vault…</div>
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--vc-muted)]">
                   Master Password
                 </label>
                 <div className="relative mt-1.5">
                   <input
                     autoFocus
-                    className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2.5 pr-10 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
+                    className="w-full rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2.5 pr-10 text-sm text-[var(--vc-text)] placeholder:text-[var(--vc-muted-2)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition"
                     type={showPw ? 'text' : 'password'}
                     value={props.password}
                     onChange={(e) => props.setPassword(e.target.value)}
@@ -662,7 +728,7 @@ function UnlockScreen(props: {
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--vc-muted)] hover:text-[var(--vc-text)]"
                     onClick={() => setShowPw(!showPw)}
                   >
                     <IconEye off={showPw} />
@@ -672,10 +738,10 @@ function UnlockScreen(props: {
                   <div className="mt-2">
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= strength.score ? strength.color : 'bg-slate-700'}`} />
+                        <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= strength.score ? strength.color : 'bg-[var(--vc-border)]'}`} />
                       ))}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">{strength.label}</div>
+                    <div className="mt-1 text-xs text-[var(--vc-muted-2)]">{strength.label}</div>
                   </div>
                 )}
               </div>
@@ -686,7 +752,7 @@ function UnlockScreen(props: {
                 {props.hasVault ? 'Unlock Vault' : 'Create Vault'}
               </button>
               <button
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-slate-200 transition"
+                className="w-full rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel-2)] px-4 py-2.5 text-sm font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
                 onClick={props.onLogout}
               >
                 Sign Out
@@ -1062,15 +1128,16 @@ function VaultScreen(props: {
           <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
-              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] p-2 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
               onClick={toggleTheme}
               title="Toggle theme"
+              aria-label="Toggle theme"
             >
-              {theme === 'dark' ? 'Light' : 'Dark'}
+              {theme === 'dark' ? <IconSun /> : <IconMoon />}
             </button>
             <button
               type="button"
-              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] p-2 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
               onClick={async () => {
                 const csv = buildLoginsCsv(props.vault.items);
                 const stamp = new Date().toISOString().slice(0, 10);
@@ -1079,11 +1146,17 @@ function VaultScreen(props: {
                 if (!pw) return;
                 await downloadZipCsv(`vaultcode-logins-${stamp}.zip`, `vaultcode-logins-${stamp}.csv`, csv, pw);
               }}
+              title="Export ZIP (Password)"
+              aria-label="Export ZIP (Password)"
             >
-              Export ZIP (Password)
+              <IconDownload />
             </button>
-            <label className="cursor-pointer rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition">
-              Import CSV
+            <label
+              className="cursor-pointer rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] p-2 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              title="Import CSV"
+              aria-label="Import CSV"
+            >
+              <IconUpload />
               <input
                 type="file" accept="text/csv,.csv" className="hidden"
                 onChange={async (e) => {
@@ -1104,14 +1177,18 @@ function VaultScreen(props: {
             <button
               onClick={props.onLock}
               className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              title="Lock"
+              aria-label="Lock"
             >
               Lock
             </button>
             <button
               onClick={props.onLogout}
-              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] p-2 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+              title="Sign Out"
+              aria-label="Sign Out"
             >
-              Sign Out
+              <IconLogOut />
             </button>
           </div>
         </div>
