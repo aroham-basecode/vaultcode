@@ -649,19 +649,19 @@ function UnlockScreen(props: {
 
   return (
     <div className="min-h-screen bg-[var(--vc-bg)] text-[var(--vc-text)] flex items-center justify-center p-4">
+      <div className="fixed right-4 top-4 z-20">
+        <button
+          type="button"
+          className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] p-2 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+          onClick={toggleTheme}
+          title="Toggle theme"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <IconSun /> : <IconMoon />}
+        </button>
+      </div>
       <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center relative">
-          <div className="absolute right-0 top-0">
-            <button
-              type="button"
-              className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] p-2 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
-              onClick={toggleTheme}
-              title="Toggle theme"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <IconSun /> : <IconMoon />}
-            </button>
-          </div>
+        <div className="mb-8 flex flex-col items-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
             <IconShield />
           </div>
