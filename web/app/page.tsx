@@ -686,15 +686,15 @@ function UnlockScreen(props: {
             <div className="text-indigo-400"><IconLock /></div>
             <div>
               <div className="text-sm font-semibold text-[var(--vc-text)]">
-                {props.hasVault ? 'Vault Locked' : 'New Vault'}
+                {props.fetchError ? 'Connection Error' : props.hasVault ? 'Vault Locked' : 'New Vault'}
               </div>
               <div className="text-xs text-[var(--vc-muted-2)]">
-                {props.hasVault ? 'Encrypted on server' : 'Will be encrypted with your master password'}
+                {props.fetchError ? 'Unable to load your vault' : props.hasVault ? 'Encrypted on server' : 'Will be encrypted with your master password'}
               </div>
             </div>
           </div>
 
-          {!props.hasVault && !props.loading && (
+          {!props.hasVault && !props.loading && !props.fetchError && (
             <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
               <div className="flex items-start gap-2">
                 <span className="mt-0.5 text-amber-400 text-base leading-none">⚠️</span>
@@ -812,6 +812,7 @@ function VaultCard(props: {
   const { copied, copy } = useCopy();
   const initials = (props.item.title || '?').slice(0, 2).toUpperCase();
   const color = avatarColor(props.item.title);
+  const openUrl = props.item.url || (props.item.host ? `https://${props.item.host}` : null);
   const effectiveCategory = (props.item.category && props.item.category.trim()) ? props.item.category.trim() : props.health?.autoCategory;
 
   return (
@@ -849,14 +850,14 @@ function VaultCard(props: {
               </div>
             </div>
             <div className="shrink-0 flex items-center gap-1">
-              {props.item.url && (
+              {openUrl && (
                 <>
                   <button
                     onClick={() => {
-                      window.open(props.item.url!, '_blank', 'noopener,noreferrer');
+                      window.open(openUrl, '_blank', 'noopener,noreferrer');
                     }}
                     className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
-                    title="Open"
+                    title="Open site"
                     type="button"
                   >
                     <IconExternalLink />
@@ -865,7 +866,7 @@ function VaultCard(props: {
                     <button
                       onClick={() => {
                         copy(props.item.password!, `${props.item.id}-pw`);
-                        window.open(props.item.url!, '_blank', 'noopener,noreferrer');
+                        window.open(openUrl, '_blank', 'noopener,noreferrer');
                         props.onQuickFill(props.item);
                       }}
                       className="rounded-lg p-1 text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10 transition"
@@ -954,21 +955,21 @@ function VaultCard(props: {
               </div>
             )}
 
-            {props.item.url && (
+            {openUrl && (
               <div className="flex items-center gap-2 rounded-lg bg-[var(--vc-panel-2)] px-2.5 py-1.5">
                 <a
-                  href={props.item.url}
+                  href={openUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="flex-1 text-[11px] text-indigo-500 hover:text-indigo-600 transition truncate"
                 >
-                  <span className="truncate">{props.item.url}</span>
+                  <span className="truncate">{props.item.url || openUrl}</span>
                 </a>
                 {props.item.password && (
                   <button
                     onClick={() => {
                       copy(props.item.password!, `${props.item.id}-pw`);
-                      window.open(props.item.url!, '_blank', 'noopener,noreferrer');
+                      window.open(openUrl, '_blank', 'noopener,noreferrer');
                       props.onQuickFill(props.item);
                     }}
                     className="shrink-0 text-[11px] font-medium text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10 px-2 py-1 rounded transition"
@@ -1126,6 +1127,7 @@ function VaultScreen(props: {
   vault: VaultBlobV1;
   onUpsert: (form: { id?: string; title: string; host: string; username: string; password: string; url: string; category: string }) => void;
   onDelete: (id: string) => void;
+  onClearAll: () => Promise<void>;
   onImportCsv: (file: File) => Promise<void>;
   onLock: () => void;
   onLogout: () => void;
@@ -1139,6 +1141,20 @@ function VaultScreen(props: {
   const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string; category: string }> | null>(null);
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
   const [fillToast, setFillToast] = useState<{ title: string; username?: string } | null>(null);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [clearBusy, setClearBusy] = useState(false);
+  const [backupChecked, setBackupChecked] = useState(false);
+
+  function openClearConfirm() {
+    setBackupChecked(false);
+    setClearConfirmOpen(true);
+  }
+
+  function closeClearConfirm() {
+    if (clearBusy) return;
+    setBackupChecked(false);
+    setClearConfirmOpen(false);
+  }
 
   function handleQuickFill(item: VaultItem) {
     setFillToast({ title: item.title ?? item.host ?? 'site', username: item.username });
@@ -1241,6 +1257,17 @@ function VaultScreen(props: {
                 }}
               />
             </label>
+            {props.vault.items.length > 0 && (
+              <button
+                type="button"
+                onClick={openClearConfirm}
+                className="rounded-xl border border-red-500/30 bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-500/10 transition"
+                title="Clear all logins"
+                aria-label="Clear all logins"
+              >
+                Clear All
+              </button>
+            )}
             <button
               onClick={props.onLock}
               className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel)] px-3 py-2 text-xs font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
@@ -1377,6 +1404,88 @@ function VaultScreen(props: {
             editingId={editingId}
             onCancel={() => { setEditorOpen(false); setEditingId(null); setPrefill(null); }}
           />
+        </div>
+      )}
+
+      {clearConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeClearConfirm} />
+          <div className="relative w-full max-w-sm rounded-2xl bg-[var(--vc-panel)] border border-[var(--vc-border)] p-6 shadow-2xl">
+
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15 text-2xl">
+              ⚠️
+            </div>
+            <h2 className="text-base font-bold text-[var(--vc-text)]">Clear All Logins?</h2>
+            <p className="mt-2 text-sm text-[var(--vc-muted)] leading-relaxed">
+              This will permanently delete all{' '}
+              <span className="font-semibold text-[var(--vc-text)]">
+                {props.vault.items.length} saved login{props.vault.items.length !== 1 ? 's' : ''}
+              </span>{' '}
+              from your vault. <span className="font-semibold text-red-400">This cannot be undone.</span>
+            </p>
+
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+              <p className="text-xs font-semibold text-amber-400 mb-2">Step 1 — Save a backup first</p>
+              <p className="text-xs text-amber-300/80 mb-3 leading-relaxed">
+                Download a ZIP backup of your logins before clearing. You can re-import it any time.
+              </p>
+              <button
+                type="button"
+                disabled={clearBusy}
+                onClick={async () => {
+                  const csv = buildLoginsCsv(props.vault.items);
+                  const stamp = new Date().toISOString().slice(0, 10);
+                  const pw = window.prompt('Set a password to protect the ZIP backup:') ?? '';
+                  if (!pw) return;
+                  await downloadZipCsv(`vaultcode-backup-${stamp}.zip`, `vaultcode-backup-${stamp}.csv`, csv, pw);
+                }}
+                className="flex items-center gap-2 rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-50 transition"
+              >
+                <IconDownload />
+                Download ZIP Backup
+              </button>
+            </div>
+
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel-2)] px-4 py-3 hover:border-indigo-500/50 transition">
+              <input
+                type="checkbox"
+                checked={backupChecked}
+                onChange={(e) => setBackupChecked(e.target.checked)}
+                disabled={clearBusy}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-indigo-500"
+              />
+              <span className="text-xs text-[var(--vc-muted)] leading-relaxed">
+                I have downloaded my backup ZIP and understand that clearing all logins is <span className="font-semibold text-[var(--vc-text)]">permanent and cannot be undone</span>.
+              </span>
+            </label>
+
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                disabled={clearBusy}
+                onClick={closeClearConfirm}
+                className="flex-1 rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel-2)] px-4 py-2.5 text-sm font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] disabled:opacity-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={clearBusy || !backupChecked}
+                onClick={async () => {
+                  setClearBusy(true);
+                  try {
+                    await props.onClearAll();
+                    setClearConfirmOpen(false);
+                  } finally {
+                    setClearBusy(false);
+                  }
+                }}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-400 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              >
+                {clearBusy ? 'Clearing…' : 'Yes, Clear All'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1549,6 +1658,13 @@ export default function Home() {
     await persist(next, masterPassword);
   }
 
+  async function handleClearAll() {
+    if (!vault) return;
+    const next = { ...vault, updatedAt: nowIso(), items: [] };
+    setVault(next);
+    await persist(next, masterPassword);
+  }
+
   async function handleImportCsv(file: File) {
     if (!vault) return;
     const rows = parseCsv(await file.text());
@@ -1603,6 +1719,7 @@ export default function Home() {
       onLock={handleLock}
       onUpsert={(form) => void handleUpsertLogin(form)}
       onDelete={(id) => void handleDelete(id)}
+      onClearAll={handleClearAll}
       onImportCsv={handleImportCsv}
       onLogout={handleLogout}
     />
