@@ -97,6 +97,35 @@ function csvEscape(value: string): string {
   return s;
 }
 
+// ── CSV field-mapping types & helpers ─────────────────────────────────────
+
+type FieldMapKey = 'title' | 'username' | 'password' | 'url' | 'host' | 'category';
+
+type FieldMap = Record<FieldMapKey, string>;
+
+const VAULT_FIELDS: { key: FieldMapKey; label: string; hint: string }[] = [
+  { key: 'title',    label: 'Title',    hint: 'Site name / service' },
+  { key: 'username', label: 'Username', hint: 'Email or login name' },
+  { key: 'password', label: 'Password', hint: 'Login password' },
+  { key: 'url',      label: 'URL',      hint: 'Login page address' },
+  { key: 'host',     label: 'Host',     hint: 'Domain name' },
+  { key: 'category', label: 'Category', hint: 'Folder / group (optional)' },
+];
+
+function autoDetectFieldMap(headers: string[]): FieldMap {
+  const lower = headers.map((h) => h.toLowerCase().trim());
+  const pick = (...terms: string[]) =>
+    headers[lower.findIndex((h) => terms.some((t) => h.includes(t)))] ?? '';
+  return {
+    title:    pick('title', 'name', 'site', 'service', 'account name'),
+    username: pick('username', 'user name', 'email', 'login', 'user'),
+    password: pick('password', 'pass', 'pwd'),
+    url:      pick('login url', 'url', 'website', 'web', 'link', 'address'),
+    host:     pick('host', 'domain', 'hostname'),
+    category: pick('category', 'folder', 'group', 'type', 'tag'),
+  };
+}
+
 function buildLoginsCsv(items: VaultItem[]): string {
   const headers = ['Title', 'Username', 'Password', 'Host', 'Login URL'];
   const rows = items
@@ -1128,7 +1157,7 @@ function VaultScreen(props: {
   onUpsert: (form: { id?: string; title: string; host: string; username: string; password: string; url: string; category: string }) => void;
   onDelete: (id: string) => void;
   onClearAll: () => Promise<void>;
-  onImportCsv: (file: File) => Promise<void>;
+  onImportRows: (items: VaultItem[]) => Promise<void>;
   onLock: () => void;
   onLogout: () => void;
 }) {
@@ -1141,6 +1170,12 @@ function VaultScreen(props: {
   const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string; category: string }> | null>(null);
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
   const [fillToast, setFillToast] = useState<{ title: string; username?: string } | null>(null);
+  const [csvMapOpen, setCsvMapOpen] = useState(false);
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [csvAllRows, setCsvAllRows] = useState<Record<string, string>[]>([]);
+  const [fieldMap, setFieldMap] = useState<FieldMap>({ title: '', username: '', password: '', url: '', host: '', category: '' });
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [lastImportCount, setLastImportCount] = useState(0);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [clearBusy, setClearBusy] = useState(false);
   const [backupChecked, setBackupChecked] = useState(false);
@@ -1245,14 +1280,19 @@ function VaultScreen(props: {
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
+                  e.target.value = '';
                   setImportError(null); setImportOk(false);
                   try {
-                    await props.onImportCsv(f);
-                    e.target.value = '';
-                    setImportOk(true);
-                    setTimeout(() => setImportOk(false), 2500);
+                    const text = await f.text();
+                    const rows = parseCsv(text);
+                    if (rows.length === 0) { setImportError('CSV is empty or has no data rows.'); return; }
+                    const headers = Object.keys(rows[0]!);
+                    setCsvHeaders(headers);
+                    setCsvAllRows(rows);
+                    setFieldMap(autoDetectFieldMap(headers));
+                    setCsvMapOpen(true);
                   } catch {
-                    setImportError('CSV import failed.');
+                    setImportError('Could not read CSV file.');
                   }
                 }}
               />
@@ -1291,7 +1331,7 @@ function VaultScreen(props: {
       {(importError || importOk) && (
         <div className={`mx-auto max-w-6xl px-4 pt-3`}>
           <div className={`rounded-xl px-4 py-3 text-sm ${importError ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'}`}>
-            {importError ?? `CSV imported successfully — ${props.vault.items.length} items total`}
+            {importError ?? `✓ Imported ${lastImportCount} login${lastImportCount !== 1 ? 's' : ''} — ${props.vault.items.length} total in vault`}
           </div>
         </div>
       )}
@@ -1404,6 +1444,139 @@ function VaultScreen(props: {
             editingId={editingId}
             onCancel={() => { setEditorOpen(false); setEditingId(null); setPrefill(null); }}
           />
+        </div>
+      )}
+
+      {csvMapOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !csvImporting && setCsvMapOpen(false)} />
+          <div className="relative w-full max-w-xl rounded-2xl bg-[var(--vc-panel)] border border-[var(--vc-border)] shadow-2xl flex flex-col max-h-[92vh]">
+
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 border-b border-[var(--vc-border)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-[var(--vc-text)]">Map CSV Columns</h2>
+                  <p className="mt-0.5 text-xs text-[var(--vc-muted)]">
+                    {csvAllRows.length} rows &middot; {csvHeaders.length} columns detected — match each vault field to your CSV column
+                  </p>
+                </div>
+                <button type="button" disabled={csvImporting} onClick={() => setCsvMapOpen(false)}
+                  className="rounded-lg p-1.5 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition">✕</button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto px-6 py-4 space-y-5">
+
+              {/* Field mapping rows */}
+              <div className="space-y-2">
+                {VAULT_FIELDS.map(({ key, label, hint }) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <div className="w-24 shrink-0">
+                      <div className="text-xs font-semibold text-[var(--vc-text)]">{label}</div>
+                      <div className="text-[11px] text-[var(--vc-muted-2)]">{hint}</div>
+                    </div>
+                    <select
+                      value={fieldMap[key]}
+                      onChange={(e) => setFieldMap((m) => ({ ...m, [key]: e.target.value }))}
+                      disabled={csvImporting}
+                      className="flex-1 rounded-xl bg-[var(--vc-panel-2)] border border-[var(--vc-border)] px-3 py-2 text-sm text-[var(--vc-text)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition disabled:opacity-50"
+                    >
+                      <option value="">— skip —</option>
+                      {csvHeaders.map((h) => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                    <div className="w-5 shrink-0 text-center text-sm">
+                      {fieldMap[key] ? <span className="text-emerald-500">✓</span> : <span className="text-[var(--vc-muted-2)]">–</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Live preview */}
+              {csvAllRows.length > 0 && (
+                <div>
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--vc-muted)]">Preview — first 3 rows</div>
+                  <div className="overflow-x-auto rounded-xl border border-[var(--vc-border)]">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-[var(--vc-border)] bg-[var(--vc-panel-2)]">
+                          {VAULT_FIELDS.filter((f) => fieldMap[f.key]).map((f) => (
+                            <th key={f.key} className="px-3 py-2 text-left font-semibold text-[var(--vc-muted)] whitespace-nowrap">{f.label}</th>
+                          ))}
+                          {VAULT_FIELDS.every((f) => !fieldMap[f.key]) && (
+                            <th className="px-3 py-2 text-left text-[var(--vc-muted-2)]">No columns mapped yet</th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvAllRows.slice(0, 3).map((row, i) => (
+                          <tr key={i} className={`border-b border-[var(--vc-border)] last:border-0 ${i % 2 === 1 ? 'bg-[var(--vc-panel-2)]/40' : ''}`}>
+                            {VAULT_FIELDS.filter((f) => fieldMap[f.key]).map((f) => (
+                              <td key={f.key} className="max-w-[140px] truncate px-3 py-2 text-[var(--vc-text)]">
+                                {f.key === 'password' && row[fieldMap[f.key]]
+                                  ? '••••••••'
+                                  : (row[fieldMap[f.key]] || <span className="text-[var(--vc-muted-2)]">—</span>)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-[var(--vc-border)] flex items-center justify-between gap-3">
+              <button type="button" disabled={csvImporting} onClick={() => setCsvMapOpen(false)}
+                className="rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel-2)] px-4 py-2.5 text-sm font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] disabled:opacity-50 transition">
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={csvImporting || !fieldMap.title && !fieldMap.username}
+                onClick={async () => {
+                  setCsvImporting(true);
+                  try {
+                    const t = nowIso();
+                    const items: VaultItem[] = csvAllRows.map((r) => {
+                      const title    = fieldMap.title    ? (r[fieldMap.title]    ?? '') : '';
+                      const username = fieldMap.username ? (r[fieldMap.username] ?? '') : '';
+                      const password = fieldMap.password ? (r[fieldMap.password] ?? '') : '';
+                      const url      = fieldMap.url      ? (r[fieldMap.url]      ?? '') : '';
+                      const host     = fieldMap.host     ? (r[fieldMap.host]     ?? '') : '';
+                      const category = fieldMap.category ? (r[fieldMap.category] ?? '') : '';
+                      if (!title && !username && !password && !url && !host) return null;
+                      const autoCat = autoCategoryFor({ title, host, url });
+                      return {
+                        id: newId(), type: 'login' as const,
+                        title: title || '(no title)',
+                        host: host || undefined, username: username || undefined,
+                        password: password || undefined, url: url || undefined,
+                        category: category || autoCat || undefined,
+                        createdAt: t, updatedAt: t,
+                      };
+                    }).filter(Boolean) as VaultItem[];
+                    setLastImportCount(items.length);
+                    await props.onImportRows(items);
+                    setCsvMapOpen(false);
+                    setImportOk(true);
+                    setTimeout(() => setImportOk(false), 3000);
+                  } catch {
+                    setImportError('Import failed. Please try again.');
+                  } finally {
+                    setCsvImporting(false);
+                  }
+                }}
+                className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {csvImporting ? 'Importing…' : `Import ${csvAllRows.length} row${csvAllRows.length !== 1 ? 's' : ''}`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1665,20 +1838,8 @@ export default function Home() {
     await persist(next, masterPassword);
   }
 
-  async function handleImportCsv(file: File) {
+  async function handleImportRows(items: VaultItem[]) {
     if (!vault) return;
-    const rows = parseCsv(await file.text());
-    const items: VaultItem[] = rows.map((r) => {
-      const title = r['Title'] ?? r['title'] ?? '';
-      const host = r['Host'] ?? r['host'] ?? '';
-      const username = r['Username'] ?? r['username'] ?? '';
-      const password = r['Password'] ?? r['password'] ?? '';
-      const url = r['Login URL'] ?? r['login url'] ?? r['url'] ?? '';
-      if (!title && !username && !password && !url && !host) return null;
-      const t = nowIso();
-      const autoCat = autoCategoryFor({ title, host, url });
-      return { id: newId(), type: 'login' as const, title: title || '(no title)', host: host || undefined, username: username || undefined, password: password || undefined, url: url || undefined, category: autoCat || undefined, createdAt: t, updatedAt: t };
-    }).filter(Boolean) as VaultItem[];
     const next = { ...vault, updatedAt: nowIso(), items: [...items, ...vault.items] };
     setVault(next);
     await persist(next, masterPassword);
@@ -1720,7 +1881,7 @@ export default function Home() {
       onUpsert={(form) => void handleUpsertLogin(form)}
       onDelete={(id) => void handleDelete(id)}
       onClearAll={handleClearAll}
-      onImportCsv={handleImportCsv}
+      onImportRows={handleImportRows}
       onLogout={handleLogout}
     />
   );
