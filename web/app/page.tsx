@@ -327,6 +327,14 @@ function IconPencil() {
   );
 }
 
+function IconZap() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
 // ── Auth Screen ────────────────────────────────────────────────────────────
 
 function AuthScreen(props: {
@@ -630,6 +638,8 @@ function AuthScreen(props: {
 function UnlockScreen(props: {
   hasVault: boolean;
   loading: boolean;
+  fetchError: boolean;
+  onRetry: () => void;
   password: string;
   setPassword: (v: string) => void;
   error: string | null;
@@ -710,6 +720,24 @@ function UnlockScreen(props: {
 
           {props.loading ? (
             <div className="py-6 text-center text-sm text-[var(--vc-muted-2)]">Loading vault…</div>
+          ) : props.fetchError ? (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+                Could not reach the server. Check your connection and try again.
+              </div>
+              <button
+                className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-400 transition"
+                onClick={props.onRetry}
+              >
+                Try Again
+              </button>
+              <button
+                className="w-full rounded-xl border border-[var(--vc-border)] bg-[var(--vc-panel-2)] px-4 py-2.5 text-sm font-medium text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+                onClick={props.onLogout}
+              >
+                Sign Out
+              </button>
+            </div>
           ) : (
             <div className="space-y-4">
               <div>
@@ -773,6 +801,7 @@ function VaultCard(props: {
   expanded: boolean;
   onToggle: () => void;
   onEdit: () => void;
+  onQuickFill: (item: VaultItem) => void;
   health?: {
     isWeak: boolean;
     reusedCount: number;
@@ -821,16 +850,32 @@ function VaultCard(props: {
             </div>
             <div className="shrink-0 flex items-center gap-1">
               {props.item.url && (
-                <button
-                  onClick={() => {
-                    window.open(props.item.url!, '_blank', 'noopener,noreferrer');
-                  }}
-                  className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
-                  title="Open"
-                  type="button"
-                >
-                  <IconExternalLink />
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      window.open(props.item.url!, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="rounded-lg p-1 text-[var(--vc-muted)] hover:text-[var(--vc-text)] hover:bg-[var(--vc-panel-2)] transition"
+                    title="Open"
+                    type="button"
+                  >
+                    <IconExternalLink />
+                  </button>
+                  {props.item.password && (
+                    <button
+                      onClick={() => {
+                        copy(props.item.password!, `${props.item.id}-pw`);
+                        window.open(props.item.url!, '_blank', 'noopener,noreferrer');
+                        props.onQuickFill(props.item);
+                      }}
+                      className="rounded-lg p-1 text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10 transition"
+                      title="Open site — password copied to clipboard"
+                      type="button"
+                    >
+                      <IconZap />
+                    </button>
+                  )}
+                </>
               )}
               <button
                 onClick={props.onEdit}
@@ -910,14 +955,30 @@ function VaultCard(props: {
             )}
 
             {props.item.url && (
-              <a
-                href={props.item.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 rounded-lg bg-[var(--vc-panel-2)] px-2.5 py-1.5 text-[11px] text-indigo-500 hover:text-indigo-600 transition truncate"
-              >
-                <span className="truncate">{props.item.url}</span>
-              </a>
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--vc-panel-2)] px-2.5 py-1.5">
+                <a
+                  href={props.item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 text-[11px] text-indigo-500 hover:text-indigo-600 transition truncate"
+                >
+                  <span className="truncate">{props.item.url}</span>
+                </a>
+                {props.item.password && (
+                  <button
+                    onClick={() => {
+                      copy(props.item.password!, `${props.item.id}-pw`);
+                      window.open(props.item.url!, '_blank', 'noopener,noreferrer');
+                      props.onQuickFill(props.item);
+                    }}
+                    className="shrink-0 text-[11px] font-medium text-indigo-500 hover:text-indigo-600 hover:bg-indigo-500/10 px-2 py-1 rounded transition"
+                    title="Open site — password copied to clipboard"
+                    type="button"
+                  >
+                    Open & Fill
+                  </button>
+                )}
+              </div>
             )}
             </div>
           )}
@@ -1077,6 +1138,12 @@ function VaultScreen(props: {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<Partial<{ title: string; host: string; username: string; password: string; url: string; category: string }> | null>(null);
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => (typeof document === 'undefined' ? 'dark' : getTheme()));
+  const [fillToast, setFillToast] = useState<{ title: string; username?: string } | null>(null);
+
+  function handleQuickFill(item: VaultItem) {
+    setFillToast({ title: item.title ?? item.host ?? 'site', username: item.username });
+    setTimeout(() => setFillToast(null), 4000);
+  }
 
   const reuseMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -1247,6 +1314,7 @@ function VaultScreen(props: {
                 item={item}
                 expanded={expandedId === item.id}
                 onToggle={() => setExpandedId((cur) => (cur === item.id ? null : item.id))}
+                onQuickFill={handleQuickFill}
                 onEdit={() => {
                   setEditorOpen(true);
                   setEditingId(item.id);
@@ -1311,6 +1379,26 @@ function VaultScreen(props: {
           />
         </div>
       )}
+
+      {fillToast && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl bg-[var(--vc-panel)] border border-[var(--vc-border)] px-4 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500 text-sm">✓</div>
+          <div>
+            <div className="text-sm font-semibold text-[var(--vc-text)]">Password copied — paste on the site</div>
+            {fillToast.username && (
+              <div className="mt-0.5 text-xs text-[var(--vc-muted)]">Username: <span className="text-[var(--vc-text)]">{fillToast.username}</span></div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setFillToast(null)}
+            className="ml-1 shrink-0 text-[var(--vc-muted)] hover:text-[var(--vc-text)] transition"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1331,7 +1419,12 @@ export default function Home() {
   const [vault, setVault] = useState<VaultBlobV1 | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [remoteEncryptedVault, setRemoteEncryptedVault] = useState<EncryptedVaultV1 | null>(null);
-  const [loadingVault, setLoadingVault] = useState(false);
+  const [loadingVault, setLoadingVault] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return Boolean(window.localStorage.getItem(TOKEN_KEY));
+  });
+  const [vaultFetchError, setVaultFetchError] = useState(false);
+  const [vaultRetry, setVaultRetry] = useState(0);
 
   const hasRemoteVault = useMemo(() => Boolean(remoteEncryptedVault), [remoteEncryptedVault]);
 
@@ -1345,15 +1438,21 @@ export default function Home() {
     if (!token) return;
     let cancelled = false;
     setLoadingVault(true);
+    setVaultFetchError(false);
     apiGetVault(token)
       .then((v) => {
         if (cancelled) return;
         setRemoteEncryptedVault(v?.encryptedVault ? v.encryptedVault as EncryptedVaultV1 : null);
       })
-      .catch(() => { if (!cancelled) setRemoteEncryptedVault(null); })
+      .catch(() => {
+        if (!cancelled) {
+          setVaultFetchError(true);
+          setRemoteEncryptedVault(null);
+        }
+      })
       .finally(() => { if (!cancelled) setLoadingVault(false); });
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, vaultRetry]);
 
   async function persist(nextVault: VaultBlobV1, pwd: string) {
     if (!token) return;
@@ -1486,6 +1585,8 @@ export default function Home() {
     return (
       <UnlockScreen
         hasVault={hasRemoteVault} loading={loadingVault}
+        fetchError={vaultFetchError}
+        onRetry={() => { setVaultFetchError(false); setVaultRetry((c) => c + 1); }}
         password={hasRemoteVault ? unlockPassword : masterPassword}
         setPassword={hasRemoteVault ? setUnlockPassword : setMasterPassword}
         error={unlockError}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VaultCode</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background: #0b1220; color: #e5e7eb; width: 360px; }
+      .wrap { padding: 12px; }
+      .card { background: #0f1b33; border: 1px solid #1f2d4a; border-radius: 12px; padding: 12px; }
+      h1 { font-size: 14px; margin: 0 0 8px; }
+      .muted { color: #94a3b8; font-size: 12px; }
+      label { display: block; font-size: 12px; color: #cbd5e1; margin-top: 10px; }
+      input { width: 100%; box-sizing: border-box; margin-top: 6px; padding: 9px 10px; border-radius: 10px; border: 1px solid #253656; background: #0b1220; color: #e5e7eb; }
+      .row { display: flex; gap: 8px; margin-top: 10px; }
+      button { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #2d3f66; background: #1b2a4a; color: #fff; cursor: pointer; }
+      button.primary { background: #4f46e5; border-color: #4f46e5; }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+      .sep { height: 1px; background: #1f2d4a; margin: 12px 0; }
+      .msg { margin-top: 10px; font-size: 12px; color: #a7f3d0; }
+      .err { margin-top: 10px; font-size: 12px; color: #fecaca; }
+      .small { font-size: 11px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      .inline { display:flex; gap:8px; align-items:center; }
+      .inline input { margin-top:0; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>VaultCode</h1>
+        <div class="muted small">Developed by Aroham Technologies Pvt Ltd (OPC)</div>
+
+        <div class="sep"></div>
+
+        <div class="muted small" style="margin-top: 2px;">
+          Connect: login on VaultCode web app once, extension will auto-detect your session.
+        </div>
+        <div class="row">
+          <button id="openApp">Open VaultCode</button>
+          <button id="disconnect">Disconnect</button>
+        </div>
+
+        <label>Master Password (session only)</label>
+        <input id="master" type="password" placeholder="Not stored permanently" />
+
+        <div class="row">
+          <button id="unlock">Unlock</button>
+          <button id="lock">Lock</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <button class="primary" id="autofill">Autofill This Site</button>
+          <button id="savePending">Save Detected Login</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <label>Password Generator</label>
+        <div class="inline">
+          <input id="genOut" class="mono" placeholder="Generate..." />
+          <button id="gen">Gen</button>
+        </div>
+        <div class="row">
+          <button id="copy">Copy</button>
+          <button id="insert">Insert</button>
+        </div>
+
+        <div id="msg" class="msg" style="display:none"></div>
+        <div id="err" class="err" style="display:none"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>

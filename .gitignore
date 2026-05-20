@@ -16,8 +16,9 @@
 apps/api/
 apps/mobile/
 
-# Browser extension (not committed)
-apps/extension/
+# Browser extension
+apps/extension/node_modules/
+apps/extension/dist/
 
 # PHP backend (not committed)
 apps/php-api/

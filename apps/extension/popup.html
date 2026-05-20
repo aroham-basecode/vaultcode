@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VaultCode</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background: #0b1220; color: #e5e7eb; }
+      .wrap { width: 360px; padding: 14px; }
+      .card { background: #0f172a; border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 14px; padding: 14px; }
+      .row { display: flex; gap: 8px; }
+      .col { display: flex; flex-direction: column; gap: 10px; }
+      .title { font-weight: 800; letter-spacing: 0.2px; }
+      .muted { color: rgba(148, 163, 184, 0.9); }
+      .small { font-size: 12px; }
+      .sep { height: 1px; background: rgba(148, 163, 184, 0.18); margin: 10px 0; }
+      label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(148, 163, 184, 0.9); }
+      input { width: 100%; box-sizing: border-box; padding: 10px 10px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.18); background: #0b1220; color: #e5e7eb; outline: none; }
+      button { flex: 1; padding: 10px 10px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.18); background: #111827; color: #e5e7eb; cursor: pointer; font-weight: 700; }
+      button.primary { background: #4f46e5; border-color: rgba(99, 102, 241, 0.6); }
+      button:disabled { opacity: 0.55; cursor: not-allowed; }
+      .msg { margin-top: 10px; border-radius: 12px; padding: 10px 10px; font-size: 13px; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.08); color: #c7d2fe; display: none; }
+      .err { margin-top: 10px; border-radius: 12px; padding: 10px 10px; font-size: 13px; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.08); color: #fecaca; display: none; }
+      .list { display: flex; flex-direction: column; gap: 8px; }
+      .item { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.18); background: #0b1220; }
+      .item button { flex: unset; width: 100%; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card col">
+        <div>
+          <div class="title">VaultCode</div>
+          <div class="muted small" id="pageStatus">Checking current page…</div>
+        </div>
+
+        <div class="row">
+          <button id="openApp">Open Web</button>
+          <button id="disconnect">Disconnect</button>
+        </div>
+
+        <div class="col" id="manualConnect" style="display:none">
+          <div class="sep"></div>
+          <label>Manual Connect (paste token from web app)</label>
+          <input id="manualToken" type="text" placeholder="eyJhbGciOiJIUzI1NiIs..." />
+          <button class="primary" id="connectManual">Connect with Token</button>
+          <div class="muted small">Get token: Open web app → DevTools Console → paste: localStorage.getItem('pm_token_v1')</div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="col">
+          <div>
+            <label>Master Password (session)</label>
+            <input id="master" type="password" placeholder="Not stored permanently" />
+          </div>
+          <div class="row">
+            <button class="primary" id="unlock">Unlock</button>
+            <button id="lock">Lock</button>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <button class="primary" id="autofill">Autofill This Site</button>
+          <button id="savePending">Save Detected Login</button>
+        </div>
+
+        <div id="results" class="list"></div>
+
+        <div id="msg" class="msg"></div>
+        <div id="err" class="err"></div>
+
+        <div class="muted small">Developed by Aroham Technologies Pvt Ltd (OPC)</div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/popup.ts"></script>
+  </body>
+</html>
